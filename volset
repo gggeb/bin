@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# volset
+# ======
+# a tool for managing pulseaudio volume.
+# usage: volset <x%|+x%|-x%|toggle>
+
+get_default_sink_name() {
+   pacmd stat | awk -F": " '/^Default sink name: /{ print $2 }'
+}
+
+
+if [ "$1" = "toggle" ]; then
+    pactl set-sink-mute "$(get_default_sink_name)" toggle
+else
+    pactl set-sink-volume "$(get_default_sink_name)" "$1"
+fi

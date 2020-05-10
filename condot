@@ -1,0 +1,106 @@
+#!/bin/sh
+#
+# condot
+# ======
+# a tool that uses envsubst to render .files before linking them.
+#
+# notes
+# -----
+# make sure that if your dots contain scripts that themselves use $variables
+# that you escape those variables as such: $HOME -> ${ESC}HOME
+
+usage() {
+    echo "usage: condot [-h, --help] [-a,--allow-non-text]"
+    echo "              [-o, --output-dir <DIR>]"
+}
+
+fail() {
+    >&2 echo "$1"
+    exit
+}
+
+output_dir=".gen"
+only_text=true
+
+while [ "$#" -gt 0 ]; do
+    case $1 in
+        -h | --help)
+            usage
+            exit
+            ;;
+        -a | --allow-non-text)
+            only_text=false
+            ;;
+        -o | --output-dir)
+            if [ ! "$2" = "" ]; then
+                output_dir="$2"
+                shift 2
+            else
+                fail "no output directory provided! aborting!"
+            fi
+            ;;
+        *)
+            fail "invalid argument '$1'! aborting!"
+            ;;
+    esac
+    shift
+done
+
+echo "output directory: $output_dir"
+echo "disallow non-text files: $only_text"
+
+printf "is this directory [%s] correct? (y/N): " "$(pwd)"
+read -r confirmation
+
+case $confirmation in
+    [yY][eE][sS]|[yY])
+        echo "continuing"
+        ;;
+    *)
+        echo "aborting!"
+        exit
+        ;;
+esac
+
+if [ -d "$output_dir" ]; then
+    printf "delete previous output? (y/N): "
+    read -r confirmation
+
+    case $confirmation in
+        [yY][eE][sS]|[yY])
+            echo "continuing"
+            ;;
+        *)
+            echo "aborting!"
+            exit
+            ;;
+    esac
+    echo "deleting previous output"
+    rm -r "$output_dir"
+fi
+
+echo "deleting broken symlinks"
+find -L ../ -type l -exec rm {} +
+
+mkdir "$output_dir"
+
+echo "duplicating directory tree"
+for dir in */; do
+    cp -a "$dir." "$output_dir"
+done
+
+export ESC='$'
+
+for entry in $(find "$output_dir/"); do
+    if [ -f "$entry" ]; then
+        if file --mime-type "$entry" | grep -q "^.*: text/.*" || [ $only_text = false ]; then
+            echo "generating '$entry'"
+            printf "%s" "$(envsubst < "$entry")" > "$entry"
+        else
+            echo "skipping '$entry'"
+        fi
+    fi
+done
+
+echo "symlinking generated files"
+cp -rs "$(pwd)/$output_dir/." ../
