@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+# batget by geb
+# ===========================
+# gets the battery and sends notifications using notify-send
+
+usage() {
+	echo "USAGE: battery [FLAGS]"
+	echo "       -h, --help              output this message"
+	echo "       -o, --only_critical     only output if critical"
+	echo "       -n, --notify            output to libnotify, not stdout"
+}
+
+fail() {
+	>&2 echo "$1"
+	exit
+}
+
+critically_low=16
+percentage="$(acpi | cut -d ' ' -f4 | sed 's/[^0-9]*//g')"
+status="$(acpi | cut -d ' ' -f3 | tr -d ',')"
+
+critical=false
+
+if [ "$percentage" -lt "$critically_low" ]; then
+	critical=true
+fi
+
+only_critical=false
+notify=false
+
+while [ $# -gt 0 ]; do
+	case $1 in
+		-h | --help)
+			usage
+			exit
+			;;
+		-o | --only_critical)
+			only_critical=true
+			;;
+		-n | --notify)
+			notify=true
+			;;
+		*)
+			fail "invalid argument '$1'"
+			;;
+	esac
+	shift
+done
+
+output="echo"
+
+if [ $notify = true ]; then
+	if [ $critical = true ]; then
+		output="notify-send --urgency=critical"
+	else
+		output="notify-send --urgency=normal"
+	fi
+fi
+
+if [ $critical = true ] && [ "$status" = "Discharging" ]; then
+	remaining="$(acpi | cut -d ' ' -f5)"
+	if [ "$remaining" != "discharging" ]; then
+		if [ $notify = true ]; then
+			$output "BATTERY LOW - $percentage%" "$remaining REMAINING"
+		else
+			$output "BATTERY LOW - $percentage%: $remaining REMAINING"
+		fi
+	else
+		$output "BATTERY LOW"
+	fi
+else
+	if [ $only_critical = false ]; then
+		$output "$percentage%"
+	fi
+fi

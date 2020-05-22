@@ -9,43 +9,43 @@ OPTIONS="LAUNCH\nINFO\nPOWER"
 ANSWER=$(echo "$OPTIONS" | dmenu)
 
 LAUNCH() {
-    OPTIONS="WEB BROWSER\nTERMINAL\n..."
-    ANSWER=$(echo "$OPTIONS" | dmenu)
+	OPTIONS="WEB BROWSER\nTERMINAL\n..."
+	ANSWER=$(echo "$OPTIONS" | dmenu)
 
-    case $ANSWER in
-        "WEB BROWSER")
-            exec firefox
-            ;;
-        "TERMINAL")
-            exec st
-            ;;
-        "...")
-            exec dmenu_run
-            ;;
-    esac
+	case $ANSWER in
+		"WEB BROWSER")
+			exec firefox
+			;;
+		"TERMINAL")
+			exec st
+			;;
+		"...")
+			exec dmenu_run
+			;;
+	esac
 }
 
 INFO() {
-    TIME="$(date "+%H:%M")"
-    DATE="$(date "+%a %d %b" | tr "[:lower:]" "[:upper:]")"
-    PACKAGES="$(xbps-query -l | wc -l)"
-    OPTIONS="TIME: $TIME\nDATE: $DATE\nPACKAGES: $PACKAGES"
-    echo "$OPTIONS" | dmenu
+	TIME="$(date "+%H:%M")"
+	DATE="$(date "+%a %d %b" | tr "[:lower:]" "[:upper:]")"
+	PACKAGES="$(xbps-query -l | wc -l)"
+	OPTIONS="TIME: $TIME\nDATE: $DATE\nPACKAGES: $PACKAGES"
+	echo "$OPTIONS" | dmenu
 }
 
 POWER() {
-    OPTIONS="LOG OFF\nSHUTDOWN\nREBOOT"
-    case $(echo "$OPTIONS" | dmenu) in
-        "LOG OFF")
-            bspc quit
-            ;;
-        "SHUTDOWN")
-            sudo poweroff
-            ;;
-        "REBOOT")
-            sudo reboot
-            ;;
-    esac
+	OPTIONS="LOG OFF\nSHUTDOWN\nREBOOT"
+	case $(echo "$OPTIONS" | dmenu) in
+		"LOG OFF")
+			bspc quit
+			;;
+		"SHUTDOWN")
+			sudo poweroff
+			;;
+		"REBOOT")
+			sudo reboot
+			;;
+	esac
 }
 
 $ANSWER
